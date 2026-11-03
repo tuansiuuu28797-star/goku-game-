@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Power Dress-Up Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            font-family: 'Outfit', sans-serif;
+            user-select: none;
+        }
+
+        /* Custom scrollbar for visual appeal */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f59e0b;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #fbbf24;
+        }
+
+        /* Glowing Effects */
+        .glow-aura {
+            filter: drop-shadow(0 0 15px rgba(234, 179, 8, 0.8));
+        }
+        .glow-blue {
+            filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8));
+        }
+        .glow-rose {
+            filter: drop-shadow(0 0 15px rgba(244, 63, 94, 0.8));
+        }
+
+        /* Animated pulse for aura */
+        @keyframes auraPulse {
+            0%, 100% { transform: scale(1); opacity: 0.85; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        .animate-aura {
+            animation: auraPulse 2.5s infinite ease-in-out;
+        }
+
+        /* Custom Background Gradients */
+        .bg-dojo {
+            background: linear-gradient(135deg, #2a0845 0%, #6441A5 100%);
+        }
+        .bg-city {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+        }
+        .bg-scifi {
+            background: linear-gradient(135deg, #020617 0%, #0f766e 50%, #0284c7 100%);
+        }
+        .bg-stadium {
+            background: linear-gradient(135deg, #451a03 0%, #9a3412 50%, #d97706 100%);
+        }
+
+        .category-tab.active {
+            background-color: #f59e0b;
+            color: #000;
+            font-weight: 800;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+        }
+
+        .item-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .item-card:hover {
+            transform: translateY(-2px) scale(1.03);
+        }
+        .item-card.selected {
+            border-color: #f59e0b;
+            background-color: rgba(245, 158, 11, 0.15);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-500/30">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent uppercase">
+                    Anime Power Studio
+                </h1>
+                <p class="text-xs text-slate-400 font-medium">Create & Outfit Your Ultimate Fighter</p>
+            </div>
+        </div>
+
+        <!-- Quick Controls Header -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            <button id="btn-randomize" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95">
+                <i class="fa-solid fa-dice"></i>
+                <span class="hidden sm:inline">Randomize</span>
+            </button>
+            <button id="btn-reset" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold text-xs sm:text-sm flex items-center gap-2 transition-all active:scale-95 border border-slate-700">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span class="hidden sm:inline">Reset</span>
+            </button>
+            <button id="btn-download" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all active:scale-95">
+                <i class="fa-solid fa-download"></i>
+                <span>Save Fighter</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-3 sm:p-6 max-w-7xl mx-auto w-full">
+
+        <!-- LEFT/TOP: Controls & Canvas Display (6 Cols on LG) -->
+        <section class="lg:col-span-6 flex flex-col gap-4">
+            
+            <!-- Character Canvas Box -->
+            <div id="stage-container" class="relative w-full aspect-[3/4] sm:aspect-[4/5] max-h-[600px] rounded-2xl bg-city border-2 border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center transition-all duration-500">
+                
+                <!-- Stage Grid / Background FX Overlay -->
+                <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+
+                <!-- Stage Watermark / Title -->
+                <div class="absolute top-4 left-4 z-10 opacity-70 pointer-events-none">
+                    <span id="bg-tag" class="text-xs uppercase tracking-widest px-2.5 py-1 bg-slate-900/80 rounded-full font-bold text-amber-400 border border-amber-500/30">
+                        Cyber City
+                    </span>
+                </div>
+
+                <!-- SVG Character Render Surface -->
+                <svg id="character-canvas" class="w-full h-full max-w-[480px] max-h-[600px]" viewBox="0 0 400 550" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <!-- Dynamic Aura Filters & Gradients -->
+                        <radialGradient id="aura-gold" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#fef08a" stop-opacity="0.9"/>
+                            <stop offset="50%" stop-color="#eab308" stop-opacity="0.6"/>
+                            <stop offset="100%" stop-color="#ca8a04" stop-opacity="0"/>
+                        </radialGradient>
+
+                        <radialGradient id="aura-blue" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.9"/>
+                            <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.6"/>
+                            <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0"/>
+                        </radialGradient>
+
+                        <radialGradient id="aura-red" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#fca5a5" stop-opacity="0.9"/>
+                            <stop offset="50%" stop-color="#ef4444" stop-opacity="0.6"/>
+                            <stop offset="100%" stop-color="#b91c1c" stop-opacity="0"/>
+                        </radialGradient>
+                    </defs>
+
+                    <!-- LAYER 0: Aura Effect (Behind Body) -->
+                    <g id="layer-aura" class="animate-aura" style="display: none;">
+                        <ellipse cx="200" cy="280" rx="160" ry="210" fill="url(#aura-gold)" />
+                        <!-- Energy Lightning Rays -->
+                        <path d="M 120 180 L 150 240 L 130 250 L 170 320" stroke="#fff" stroke-width="3" fill="none" opacity="0.8"/>
+                        <path d="M 280 150 L 250 220 L 270 230 L 230 330" stroke="#fff" stroke-width="3" fill="none" opacity="0.8"/>
+                    </g>
+
+                    <!-- LAYER 1: Base Character Body -->
+                    <g id="layer-body">
+                        <!-- Shadow Base -->
+                        <ellipse cx="200" cy="510" rx="90" ry="14" fill="#000000" opacity="0.3" />
+
+                        <!-- Legs / Skin -->
+                        <path id="skin-legs" d="M 165 340 L 160 480 L 180 485 L 188 340 Z M 235 340 L 240 480 L 220 485 L 212 340 Z" fill="#fbd5b5" />
+
+                        <!-- Torso Base Skin -->
+                        <path id="skin-torso" d="M 145 160 C 145 140 255 140 255 160 L 240 340 L 160 340 Z" fill="#fbd5b5" />
+                        
+                        <!-- Muscle / Body Details -->
+                        <path d="M 175 190 Q 200 205 225 190 M 200 200 L 200 280 M 180 230 Q 200 240 220 230 M 182 260 Q 200 270 218 260" stroke="#e0a98b" stroke-width="2.5" fill="none" stroke-linecap="round" />
+
+                        <!-- Arms Skin -->
+                        <!-- Left Arm -->
+                        <path id="skin-arm-l" d="M 145 160 Q 115 230 120 300 L 140 300 Q 138 230 160 170 Z" fill="#fbd5b5" />
+                        <!-- Right Arm -->
+                        <path id="skin-arm-r" d="M 255 160 Q 285 230 280 300 L 260 300 Q 262 230 240 170 Z" fill="#fbd5b5" />
+
+                        <!-- Neck -->
+                        <path id="skin-neck" d="M 185 130 L 215 130 L 218 165 L 182 165 Z" fill="#f6c29d" />
+
+                        <!-- Head / Face -->
+                        <path id="skin-head" d="M 155 100 C 155 40 245 40 245 100 C 245 135 220 155 200 155 C 180 155 155 135 155 100 Z" fill="#fbd5b5" />
+                        
+                        <!-- Face Details (Eyes, Eyebrows, Mouth) -->
+                        <g id="face-features">
+                            <!-- Eyebrows -->
+                            <path id="eyebrow-l" d="M 168 82 Q 183 78 192 85" stroke="#1e293b" stroke-width="4" fill="none" stroke-linecap="round" />
+                            <path id="eyebrow-r" d="M 232 82 Q 217 78 208 85" stroke="#1e293b" stroke-width="4" fill="none" stroke-linecap="round" />
+                            
+                            <!-- Anime Eyes Outer -->
+                            <polygon points="166,90 192,90 188,106 168,103" fill="#ffffff" stroke="#0f172a" stroke-width="2.5" />
+                            <polygon points="234,90 208,90 212,106 232,103" fill="#ffffff" stroke="#0f172a" stroke-width="2.5" />
+                            
+                            <!-- Irises (Default Cyan/Blue Anime Style) -->
+                            <ellipse id="eye-iris-l" cx="180" cy="97" rx="6" ry="7" fill="#0284c7" />
+                            <ellipse id="eye-iris-r" cx="220" cy="97" rx="6" ry="7" fill="#0284c7" />
+                            
+                            <!-- Eye Highlights -->
+                            <circle cx="178" cy="94" r="2" fill="#ffffff" />
+                            <circle cx="218" cy="94" r="2" fill="#ffffff" />
+
+                            <!-- Nose -->
+                            <path d="M 198 108 L 202 115 L 197 117" stroke="#d49b77" stroke-width="2" fill="none" stroke-linecap="round" />
+                            
+                            <!-- Mouth -->
+                            <path d="M 188 132 Q 200 140 212 132" stroke="#9a3412" stroke-width="3" fill="none" stroke-linecap="round" />
+                        </g>
+                    </g>
+
+                    <!-- LAYER 2: Bottoms / Pants -->
+                    <g id="layer-bottoms"></g>
+
+                    <!-- LAYER 3: Tops / Shirts / Gi -->
+                    <g id="layer-tops"></g>
+
+                    <!-- LAYER 4: Full Suits (Overwrites Tops/Bottoms if set) -->
+                    <g id="layer-suits"></g>
+
+                    <!-- LAYER 5: Shoes / Boots -->
+                    <g id="layer-shoes">
+                        <!-- Default Boots -->
+                        <path class="shoe-part" d="M 152 465 L 185 465 L 190 500 Q 185 510 150 510 L 140 495 Z" fill="#1e293b" />
+                        <path class="shoe-part" d="M 248 465 L 215 465 L 210 500 Q 215 510 250 510 L 260 495 Z" fill="#1e293b" />
+                    </g>
+
+                    <!-- LAYER 6: Hair Style -->
+                    <g id="layer-hair"></g>
+
+                    <!-- LAYER 7: Accessories (Glasses, Scaffs, Belts, Scouters) -->
+                    <g id="layer-accessories"></g>
+
+                </svg>
+
+            </div>
+
+            <!-- Background & Presets Selector Toolbar -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+                
+                <!-- Background Changer -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-image text-amber-400"></i> Stage:
+                    </span>
+                    <div class="flex gap-1.5">
+                        <button onclick="changeBackground('bg-city', 'Cyber City')" class="w-7 h-7 rounded-lg bg-indigo-950 border border-indigo-500/50 hover:scale-110 transition-transform" title="Cyber City"></button>
+                        <button onclick="changeBackground('bg-dojo', 'Dojo Temple')" class="w-7 h-7 rounded-lg bg-purple-950 border border-purple-500/50 hover:scale-110 transition-transform" title="Dojo Temple"></button>
+                        <button onclick="changeBackground('bg-scifi', 'Hyper Chamber')" class="w-7 h-7 rounded-lg bg-teal-950 border border-teal-500/50 hover:scale-110 transition-transform" title="Sci-Fi Chamber"></button>
+                        <button onclick="changeBackground('bg-stadium', 'World Arena')" class="w-7 h-7 rounded-lg bg-amber-950 border border-amber-500/50 hover:scale-110 transition-transform" title="World Arena"></button>
+                    </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Preset:
+                    </span>
+                    <div class="flex gap-1.5">
+                        <button onclick="applyPreset('saiyan')" class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg hover:bg-amber-500/30 transition-all">Super Saiyan</button>
+                        <button onclick="applyPreset('street')" class="px-2.5 py-1 text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 rounded-lg hover:bg-indigo-500/30 transition-all">Streetwear</button>
+                        <button onclick="applyPreset('cyber')" class="px-2.5 py-1 text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 rounded-lg hover:bg-cyan-500/30 transition-all">Cyberpunk</button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT/BOTTOM: Customization Wardrobe Panel (6 Cols on LG) -->
+        <section class="lg:col-span-6 flex flex-col gap-4">
+
+            <!-- Wardrobe Outer Box -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col h-full shadow-xl">
+
+                <!-- Dynamic Color Palette Customizer Bar -->
+                <div id="color-picker-bar" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-palette text-amber-400 text-sm"></i>
+                        <span id="color-target-label" class="text-xs font-bold text-slate-200">Color Adjuster (Hair):</span>
+                    </div>
+
+                    <!-- Swatches Palette -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex gap-1.5" id="preset-swatches">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <!-- Native Color Picker Input -->
+                        <div class="relative flex items-center">
+                            <input type="color" id="custom-color-input" value="#f59e0b" class="w-7 h-7 rounded-md cursor-pointer bg-transparent border-0 opacity-0 absolute inset-0 z-10" />
+                            <div class="w-7 h-7 rounded-lg border border-slate-600 bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shadow-sm">
+                                <i class="fa-solid fa-plus"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Tabs Navigation -->
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800/80 mb-4">
+                    <button onclick="switchCategory('hair')" id="tab-hair" class="category-tab active py-2 text-xs font-bold rounded-lg transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-user"></i>
+                        <span>Hair</span>
+                    </button>
+                    <button onclick="switchCategory('tops')" id="tab-tops" class="category-tab py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-shirt"></i>
+                        <span>Tops</span>
+                    </button>
+                    <button onclick="switchCategory('bottoms')" id="tab-bottoms" class="category-tab py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-socks"></i>
+                        <span>Pants</span>
+                    </button>
+                    <button onclick="switchCategory('suits')" id="tab-suits" class="category-tab py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-vest"></i>
+                        <span>Suits</span>
+                    </button>
+                    <button onclick="switchCategory('shoes')" id="tab-shoes" class="category-tab py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-shoe-prints"></i>
+                        <span>Shoes</span>
+                    </button>
+                    <button onclick="switchCategory('accessories')" id="tab-accessories" class="category-tab py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-glasses"></i>
+                        <span>Extra</span>
+                    </button>
+                </div>
+
+                <!-- Items Grid Container -->
+                <div class="flex-1 min-h-[320px] max-h-[420px] overflow-y-auto pr-1">
+                    <div id="items-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <!-- Item Cards injected by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Footer Tips -->
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info text-amber-400"></i> Click item to equip/unequip
+                    </span>
+                    <span class="text-slate-400">Layers automatically update</span>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-amber-500 text-slate-950 font-extrabold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-amber-300">
+        <i class="fa-solid fa-circle-check text-lg"></i>
+        <span id="toast-message">Fighter Outfit Saved!</span>
+    </div>
+
+    <!-- MAIN INTERACTIVE JAVASCRIPT LOGIC -->
+    <script>
+        // State Management
+        const state = {
+            currentCategory: 'hair',
+            background: 'bg-city',
+            equipped: {
+                hair: 'spiky',
+                tops: 'gi-top',
+                bottoms: 'gi-bottoms',
+                suits: null,
+                shoes: 'boots',
+                aura: 'none',
+                glasses: 'none',
+                scouter: 'none'
+            },
+            colors: {
+                hair: '#f59e0b',
+                tops: '#ea580c',
+                bottoms: '#ea580c',
+                suits: '#1e293b',
+                shoes: '#1e293b',
+                aura: '#eab308'
+            }
+        };
+
+        // Preset Color Swatches for quick selection
+        const colorSwatches = [
+            '#f59e0b', // Super Saiyan Gold
+            '#0284c7', // SSGSS Cyan
+            '#ef4444', // God Red
+            '#a855f7', // Ultra Instinct Purple
+            '#10b981', // Emerald
+            '#1e293b', // Dark Slate
+            '#f43f5e', // Hot Pink
+            '#ffffff'  // Silver White
+        ];
+
+        // Catalog of Available Wardrobe Items
+        const wardrobeCatalog = {
+            hair: [
+                { id: 'none', name: 'Bald / None', icon: 'fa-ban' },
+                { id: 'spiky', name: 'Classic Spiky Saiyan', icon: 'fa-bolt' },
+                { id: 'ultra', name: 'Wild Spike (SSJ3)', icon: 'fa-fire-flame-curved' },
+                { id: 'modern', name: 'Anime Undercut', icon: 'fa-user-ninja' },
+                { id: 'trunks', name: 'Center Part Bob', icon: 'fa-scissors' }
+            ],
+            tops: [
+                { id: 'none', name: 'Bare Chest', icon: 'fa-ban' },
+                { id: 'gi-top', name: 'Martial Arts Gi', icon: 'fa-vest' },
+                { id: 'tshirt', name: 'Casual T-Shirt', icon: 'fa-shirt' },
+                { id: 'armor', name: 'Saiyan Battle Armor', icon: 'fa-shield-halved' }
+            ],
+            bottoms: [
+                { id: 'none', name: 'Shorts', icon: 'fa-ban' },
+                { id: 'gi-bottoms', name: 'Baggy Martial Pants', icon: 'fa-socks' },
+                { id: 'jeans', name: 'Streetwear Jeans', icon: 'fa-ring' }
+            ],
+            suits: [
+                { id: 'none', name: 'No Full Suit', icon: 'fa-ban' },
+                { id: 'full-gi', name: 'Master Turtle Gi', icon: 'fa-vest-patches' },
+                { id: 'cybersuit', name: 'Cyber Mech Suit', icon: 'fa-robot' }
+            ],
+            shoes: [
+                { id: 'none', name: 'Barefoot', icon: 'fa-ban' },
+                { id: 'boots', name: 'Combat Martial Boots', icon: 'fa-shoe-prints' },
+                { id: 'sneakers', name: 'Hi-Top Sneakers', icon: 'fa-ring' }
+            ],
+            accessories: [
+                { id: 'aura-gold', name: 'Golden Super Aura', type: 'aura', color: '#eab308' },
+                { id: 'aura-blue', name: 'God Blue Energy', type: 'aura', color: '#3b82f6' },
+                { id: 'aura-red', name: 'Kaio Crimson Aura', type: 'aura', color: '#ef4444' },
+                { id: 'scouter', name: 'Tactical Scouter', type: 'glasses' },
+                { id: 'sunglasses', name: 'Cool Anime Shades', type: 'glasses' },
+                { id: 'none-acc', name: 'Clear All Extras', type: 'clear' }
+            ]
+        };
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            renderSwatches();
+            switchCategory('hair');
+            renderCharacter();
+            
+            // Color picker change event listener
+            document.getElementById('custom-color-input').addEventListener('input', (e) => {
+                applyColorToCurrentCategory(e.target.value);
+            });
+        });
+
+        // Category Switcher
+        function switchCategory(cat) {
+            state.currentCategory = cat;
+
+            // Update Tab UI
+            document.querySelectorAll('.category-tab').forEach(tab => tab.classList.remove('active'));
+            const activeTab = document.getElementById(`tab-${cat}`);
+            if (activeTab) activeTab.classList.add('active');
+
+            // Update Color Target Label
+            const labelMap = {
+                hair: 'Hair Color:',
+                tops: 'Top Color:',
+                bottoms: 'Pants Color:',
+                suits: 'Suit Primary Color:',
+                shoes: 'Footwear Color:',
+                accessories: 'Aura / Accessory Tint:'
+            };
+            document.getElementById('color-target-label').textContent = `Color Adjuster (${labelMap[cat] || 'Item'}):`;
+
+            // Render Items Grid for selected category
+            renderItemsGrid(cat);
+        }
+
+        // Render Wardrobe Grid Items
+        function renderItemsGrid(cat) {
+            const grid = document.getElementById('items-grid');
+            grid.innerHTML = '';
+
+            const items = wardrobeCatalog[cat] || [];
+            items.forEach(item => {
+                const isSelected = isItemEquipped(cat, item.id);
+                const card = document.createElement('div');
+                card.className = `item-card border border-slate-800 bg-slate-950/60 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer text-center relative ${isSelected ? 'selected' : ''}`;
+                
+                card.onclick = () => selectItem(cat, item);
+
+                card.innerHTML = `
+                    <div class="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400 text-xl mb-2 shadow-inner">
+                        <i class="fa-solid ${item.icon || 'fa-sparkles'}"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-200">${item.name}</span>
+                    ${isSelected ? '<div class="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b]"></div>' : ''}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Check if item is equipped
+        function isItemEquipped(cat, id) {
+            if (cat === 'accessories') {
+                return state.equipped.aura === id || state.equipped.glasses === id;
+            }
+            return state.equipped[cat] === id;
+        }
+
+        // Select and Equip Wardrobe Item
+        function selectItem(cat, item) {
+            if (cat === 'accessories') {
+                if (item.type === 'aura') {
+                    state.equipped.aura = state.equipped.aura === item.id ? 'none' : item.id;
+                } else if (item.type === 'glasses') {
+                    state.equipped.glasses = state.equipped.glasses === item.id ? 'none' : item.id;
+                } else if (item.type === 'clear') {
+                    state.equipped.aura = 'none';
+                    state.equipped.glasses = 'none';
+                }
+            } else if (cat === 'suits') {
+                // If equipping a suit, unequip top and bottoms for clean overlay
+                if (item.id !== 'none') {
+                    state.equipped.suits = item.id;
+                    state.equipped.tops = 'none';
+                    state.equipped.bottoms = 'none';
+                } else {
+                    state.equipped.suits = 'none';
+                }
+            } else {
+                // If selecting top or bottom, clear full suit
+                if (cat === 'tops' || cat === 'bottoms') {
+                    state.equipped.suits = 'none';
+                }
+                state.equipped[cat] = item.id;
+            }
+
+            renderItemsGrid(cat);
+            renderCharacter();
+        }
+
+        // Render Color Palette Swatches
+        function renderSwatches() {
+            const container = document.getElementById('preset-swatches');
+            container.innerHTML = '';
+
+            colorSwatches.forEach(color => {
+                const btn = document.createElement('button');
+                btn.className = 'w-6 h-6 rounded-full border border-slate-700 hover:scale-110 transition-transform shadow-sm';
+                btn.style.backgroundColor = color;
+                btn.onclick = () => applyColorToCurrentCategory(color);
+                container.appendChild(btn);
+            });
+        }
+
+        // Apply Color to Active Category
+        function applyColorToCurrentCategory(color) {
+            const cat = state.currentCategory;
+            state.colors[cat] = color;
+
+            if (cat === 'accessories' && state.equipped.aura !== 'none') {
+                state.colors.aura = color;
+            }
+
+            renderCharacter();
+        }
+
+        // Main SVG Character Renderer
+        function renderCharacter() {
+            // 1. Render Hair Layer
+            const hairLayer = document.getElementById('layer-hair');
+            const hairColor = state.colors.hair || '#f59e0b';
+            
+            if (state.equipped.hair === 'spiky') {
+                hairLayer.innerHTML = `
+                    <path d="M 140 100 Q 110 50 130 10 L 160 55 Q 165 20 195 5 L 205 60 Q 235 15 260 25 L 250 70 Q 285 45 280 85 L 245 105 Q 260 130 240 140 L 235 110 Q 195 145 155 110 Z" fill="${hairColor}" stroke="#0f172a" stroke-width="2.5" />
+                    <path d="M 175 60 L 180 95 M 220 60 L 210 95" stroke="rgba(0,0,0,0.15)" stroke-width="3" />
+                `;
+            } else if (state.equipped.hair === 'ultra') {
+                hairLayer.innerHTML = `
+                    <path d="M 130 110 L 90 40 L 140 60 L 150 -10 L 185 45 L 210 -20 L 230 50 L 270 10 L 260 70 L 300 60 L 255 110 Z" fill="${hairColor}" stroke="#0f172a" stroke-width="3" />
+                `;
+            } else if (state.equipped.hair === 'modern') {
+                hairLayer.innerHTML = `
+                    <path d="M 150 95 Q 160 30 200 30 Q 240 30 250 95 Q 210 65 150 95 Z" fill="${hairColor}" stroke="#0f172a" stroke-width="2.5" />
+                    <path d="M 152 95 Q 140 110 145 130 L 158 110 Z" fill="#1e293b" />
+                `;
+            } else if (state.equipped.hair === 'trunks') {
+                hairLayer.innerHTML = `
+                    <path d="M 150 70 C 150 20 250 20 250 70 C 250 120 235 125 235 125 C 235 125 220 80 200 80 C 180 80 165 125 165 125 Z" fill="${hairColor}" stroke="#0f172a" stroke-width="2.5" />
+                `;
+            } else {
+                hairLayer.innerHTML = '';
+            }
+
+            // 2. Render Tops Layer
+            const topsLayer = document.getElementById('layer-tops');
+            const topColor = state.colors.tops || '#ea580c';
+
+            if (state.equipped.tops === 'gi-top') {
+                topsLayer.innerHTML = `
+                    <!-- Gi Vest Upper -->
+                    <path d="M 145 160 L 180 160 L 175 290 L 140 280 Z" fill="${topColor}" stroke="#0f172a" stroke-width="2" />
+                    <path d="M 255 160 L 220 160 L 225 290 L 260 280 Z" fill="${topColor}" stroke="#0f172a" stroke-width="2" />
+                    <!-- Inner Blue Undershirt -->
+                    <path d="M 175 160 L 225 160 L 210 230 L 190 230 Z" fill="#1d4ed8" />
+                    <!-- Blue Sash Belt -->
+                    <path d="M 155 285 L 245 285 L 248 315 L 152 315 Z" fill="#1d4ed8" stroke="#0f172a" stroke-width="2" />
+                `;
+            } else if (state.equipped.tops === 'tshirt') {
+                topsLayer.innerHTML = `
+                    <path d="M 142 160 L 258 160 L 248 290 L 152 290 Z" fill="${topColor}" stroke="#0f172a" stroke-width="2.5" />
+                    <!-- Sleeves -->
+                    <path d="M 142 160 L 120 200 L 145 210 L 155 170 Z" fill="${topColor}" stroke="#0f172a" stroke-width="2" />
+                    <path d="M 258 160 L 280 200 L 255 210 L 245 170 Z" fill="${topColor}" stroke="#0f172a" stroke-width="2" />
+                `;
+            } else if (state.equipped.tops === 'armor') {
+                topsLayer.innerHTML = `
+                    <!-- Saiyan Battle Armor Body -->
+                    <path d="M 145 160 L 255 160 L 245 295 L 155 295 Z" fill="#ffffff" stroke="#0f172a" stroke-width="2.5" />
+                    <!-- Gold Chest Plates -->
+                    <rect x="160" y="180" width="35" height="50" rx="4" fill="${topColor}" stroke="#0f172a" stroke-width="2" />
+                    <rect x="205" y="180" width="35" height="50" rx="4" fill="${topColor}" stroke="#0f172a" stroke-width="2" />
+                    <!-- Shoulder Straps -->
+                    <path d="M 155 140 L 180 140 L 175 160 L 150 160 Z" fill="${topColor}" />
+                    <path d="M 245 140 L 220 140 L 225 160 L 250 160 Z" fill="${topColor}" />
+                `;
+            } else {
+                topsLayer.innerHTML = '';
+            }
+
+            // 3. Render Bottoms Layer
+            const bottomsLayer = document.getElementById('layer-bottoms');
+            const bottomColor = state.colors.bottoms || '#ea580c';
+
+            if (state.equipped.bottoms === 'gi-bottoms') {
+                bottomsLayer.innerHTML = `
+                    <!-- Baggy Gi Pants -->
+                    <path d="M 155 310 L 245 310 L 260 460 L 210 460 L 200 370 L 190 460 L 140 460 Z" fill="${bottomColor}" stroke="#0f172a" stroke-width="2.5" />
+                    <!-- Folds Lines -->
+                    <path d="M 175 330 Q 185 400 170 440 M 225 330 Q 215 400 230 440" stroke="rgba(0,0,0,0.2)" stroke-width="3" fill="none" />
+                `;
+            } else if (state.equipped.bottoms === 'jeans') {
+                bottomsLayer.innerHTML = `
+                    <!-- Denim Jeans -->
+                    <path d="M 158 310 L 242 310 L 248 465 L 212 465 L 200 350 L 188 465 L 152 465 Z" fill="${bottomColor}" stroke="#0f172a" stroke-width="2.5" />
+                    <path d="M 180 320 L 180 340 M 220 320 L 220 340" stroke="#f59e0b" stroke-width="2" />
+                `;
+            } else {
+                bottomsLayer.innerHTML = '';
+            }
+
+            // 4. Render Suits Layer (Full Overlay)
+            const suitsLayer = document.getElementById('layer-suits');
+            const suitColor = state.colors.suits || '#1e293b';
+
+            if (state.equipped.suits === 'full-gi') {
+                suitsLayer.innerHTML = `
+                    <!-- Upper Gi Suit -->
+                    <path d="M 145 160 L 185 160 L 175 295 L 140 280 Z" fill="${suitColor}" stroke="#0f172a" stroke-width="2" />
+                    <path d="M 255 160 L 215 160 L 225 295 L 260 280 Z" fill="${suitColor}" stroke="#0f172a" stroke-width="2" />
+                    <path d="M 175 160 L 225 160 L 210 220 L 190 220 Z" fill="#2563eb" />
+                    <!-- Belt -->
+                    <path d="M 152 290 L 248 290 L 248 315 L 152 315 Z" fill="#2563eb" stroke="#0f172a" stroke-width="2" />
+                    <!-- Master Emblem Kanji Badge -->
+                    <circle cx="175" cy="220" r="14" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+                    <text x="175" y="225" font-size="14" font-weight="bold" text-anchor="middle" fill="#000">亀</text>
+                    <!-- Pants -->
+                    <path d="M 155 315 L 245 315 L 260 460 L 210 460 L 200 370 L 190 460 L 140 460 Z" fill="${suitColor}" stroke="#0f172a" stroke-width="2.5" />
+                `;
+            } else if (state.equipped.suits === 'cybersuit') {
+                suitsLayer.innerHTML = `
+                    <!-- Sci-Fi Armor Suit Body -->
+                    <path d="M 142 160 L 258 160 L 245 310 L 155 310 Z" fill="${suitColor}" stroke="#0f172a" stroke-width="2.5" />
+                    <!-- Glowing Core -->
+                    <polygon points="200,185 215,205 185,205" fill="#06b6d4" class="glow-blue" />
+                    <!-- Cyber Legs -->
+                    <path d="M 155 310 L 245 310 L 248 465 L 212 465 L 200 370 L 188 465 L 152 465 Z" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
+                `;
+            } else {
+                suitsLayer.innerHTML = '';
+            }
+
+            // 5. Render Accessories (Aura, Scouter, Glasses)
+            const auraLayer = document.getElementById('layer-aura');
+            if (state.equipped.aura !== 'none') {
+                auraLayer.style.display = 'block';
+                const auraGradient = state.equipped.aura === 'aura-blue' ? 'url(#aura-blue)' :
+                                   state.equipped.aura === 'aura-red' ? 'url(#aura-red)' : 'url(#aura-gold)';
+                auraLayer.querySelector('ellipse').setAttribute('fill', auraGradient);
+            } else {
+                auraLayer.style.display = 'none';
+            }
+
+            const accLayer = document.getElementById('layer-accessories');
+            if (state.equipped.glasses === 'scouter') {
+                accLayer.innerHTML = `
+                    <!-- Tactical Scouter Eyepiece -->
+                    <path d="M 205 88 L 240 85 L 245 108 L 210 110 Z" fill="rgba(34, 197, 94, 0.75)" stroke="#15803d" stroke-width="2" />
+                    <rect x="238" y="85" width="8" height="20" fill="#475569" />
+                `;
+            } else if (state.equipped.glasses === 'sunglasses') {
+                accLayer.innerHTML = `
+                    <!-- Dark Anime Sunglasses -->
+                    <polygon points="160,88 196,88 190,108 164,106" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5" />
+                    <polygon points="240,88 204,88 210,108 236,106" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5" />
+                    <line x1="196" y1="92" x2="204" y2="92" stroke="#f59e0b" stroke-width="2" />
+                `;
+            } else {
+                accLayer.innerHTML = '';
+            }
+        }
+
+        // Change Canvas Background Theme
+        function changeBackground(bgClass, bgName) {
+            const container = document.getElementById('stage-container');
+            container.className = `relative w-full aspect-[3/4] sm:aspect-[4/5] max-h-[600px] rounded-2xl border-2 border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center transition-all duration-500 ${bgClass}`;
+            document.getElementById('bg-tag').textContent = bgName;
+            state.background = bgClass;
+        }
+
+        // Apply Character Style Presets
+        function applyPreset(type) {
+            if (type === 'saiyan') {
+                state.equipped = {
+                    hair: 'spiky',
+                    tops: 'gi-top',
+                    bottoms: 'gi-bottoms',
+                    suits: 'none',
+                    shoes: 'boots',
+                    aura: 'aura-gold',
+                    glasses: 'none'
+                };
+                state.colors.hair = '#f59e0b';
+                state.colors.tops = '#ea580c';
+                state.colors.bottoms = '#ea580c';
+                changeBackground('bg-dojo', 'Dojo Temple');
+            } else if (type === 'street') {
+                state.equipped = {
+                    hair: 'modern',
+                    tops: 'tshirt',
+                    bottoms: 'jeans',
+                    suits: 'none',
+                    shoes: 'sneakers',
+                    aura: 'none',
+                    glasses: 'sunglasses'
+                };
+                state.colors.hair = '#1e293b';
+                state.colors.tops = '#f43f5e';
+                state.colors.bottoms = '#0284c7';
+                changeBackground('bg-city', 'Cyber City');
+            } else if (type === 'cyber') {
+                state.equipped = {
+                    hair: 'trunks',
+                    tops: 'none',
+                    bottoms: 'none',
+                    suits: 'cybersuit',
+                    shoes: 'boots',
+                    aura: 'aura-blue',
+                    glasses: 'scouter'
+                };
+                state.colors.hair = '#a855f7';
+                state.colors.suits = '#0f172a';
+                changeBackground('bg-scifi', 'Hyper Chamber');
+            }
+
+            renderItemsGrid(state.currentCategory);
+            renderCharacter();
+            showToast(`Preset: ${type.toUpperCase()} Applied!`);
+        }
+
+        // Randomize Character Outfit
+        document.getElementById('btn-randomize').addEventListener('click', () => {
+            const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            state.equipped.hair = getRandom(wardrobeCatalog.hair).id;
+            state.equipped.shoes = getRandom(wardrobeCatalog.shoes).id;
+            state.colors.hair = getRandom(colorSwatches);
+
+            // 50% chance of suit or split tops/bottoms
+            if (Math.random() > 0.5) {
+                state.equipped.suits = getRandom(wardrobeCatalog.suits.filter(i => i.id !== 'none')).id;
+                state.equipped.tops = 'none';
+                state.equipped.bottoms = 'none';
+                state.colors.suits = getRandom(colorSwatches);
+            } else {
+                state.equipped.suits = 'none';
+                state.equipped.tops = getRandom(wardrobeCatalog.tops).id;
+                state.equipped.bottoms = getRandom(wardrobeCatalog.bottoms).id;
+                state.colors.tops = getRandom(colorSwatches);
+                state.colors.bottoms = getRandom(colorSwatches);
+            }
+
+            // Accessories
+            state.equipped.aura = getRandom(wardrobeCatalog.accessories.filter(i => i.type === 'aura')).id;
+            state.equipped.glasses = getRandom(wardrobeCatalog.accessories.filter(i => i.type === 'glasses')).id;
+
+            renderItemsGrid(state.currentCategory);
+            renderCharacter();
+            showToast('Random Outfit Generated!');
+        });
+
+        // Reset Character
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            state.equipped = {
+                hair: 'spiky',
+                tops: 'gi-top',
+                bottoms: 'gi-bottoms',
+                suits: 'none',
+                shoes: 'boots',
+                aura: 'none',
+                glasses: 'none'
+            };
+            state.colors = {
+                hair: '#f59e0b',
+                tops: '#ea580c',
+                bottoms: '#ea580c',
+                suits: '#1e293b',
+                shoes: '#1e293b',
+                aura: '#eab308'
+            };
+            renderItemsGrid(state.currentCategory);
+            renderCharacter();
+            showToast('Character Reset!');
+        });
+
+        // Save / Download Screenshot Feature using Canvas Rendering
+        document.getElementById('btn-download').addEventListener('click', () => {
+            const svgElement = document.getElementById('character-canvas');
+            const xml = new XMLSerializer().serializeToString(svgElement);
+            const svg64 = btoa(unescape(encodeURIComponent(xml)));
+            const image64 = 'data:image/svg+xml;base64,' + svg64;
+
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 1000;
+                const ctx = canvas.getContext('2d');
+
+                // Draw solid background color matching theme
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw character graphic onto canvas
+                ctx.drawImage(img, 0, 0, 800, 1000);
+
+                // Create download trigger
+                const link = document.createElement('a');
+                link.download = `anime-fighter-${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                showToast('Fighter Image Saved to Device!');
+            };
+            img.src = image64;
+        });
+
+        // Notification Toast Handler
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
